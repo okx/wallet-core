@@ -176,7 +176,7 @@ abstract contract ValidationLogic is IValidation, WalletCoreBase {
                     CALLS_TYPEHASH,
                     _walletImplementation(),
                     nonce,
-                    keccak256(abi.encode(callHashes))
+                    keccak256(abi.encodePacked(callHashes))
                 )
             );
     }
