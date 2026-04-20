@@ -82,10 +82,10 @@ abstract contract ValidationLogic is IValidation, WalletCoreBase {
             return false;
         }
 
-        bytes32 boundHash = keccak256(
-            abi.encode(bytes32(block.chainid), address(this), _hash)
+        bytes32 domainSeparator = keccak256(
+            abi.encode(bytes32(block.chainid), address(this))
         );
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", boundHash));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, _hash));
 
         return WalletCoreLib.validate(validator, digest, signature);
     }
