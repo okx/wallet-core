@@ -15,7 +15,7 @@ abstract contract ValidationLogic is IValidation, WalletCoreBase {
     using Clones for address;
 
     bytes32 private constant CALLS_TYPEHASH =
-        keccak256("Calls(address wallet,uint256 nonce,bytes32[] calls)");
+        keccak256("Calls(address wallet,uint256 nonce,uint256 deadline,bytes32[] calls)");
     bytes32 private constant CALL_TYPEHASH =
         keccak256("Call(address target,uint256 value,bytes data)");
 
@@ -29,10 +29,12 @@ abstract contract ValidationLogic is IValidation, WalletCoreBase {
     modifier onlyValidator(
         Call[] calldata calls,
         address validator,
+        uint256 deadline,
         bytes calldata validationData
     ) {
+        if (deadline != 0 && block.timestamp > deadline) revert Errors.InvalidSession();
         uint256 nonce = getMainStorage().readAndUpdateNonce(validator);
-        _validateCall(nonce, calls, validator, validationData);
+        _validateCall(nonce, deadline, calls, validator, validationData);
         _;
     }
 
@@ -99,9 +101,10 @@ abstract contract ValidationLogic is IValidation, WalletCoreBase {
      */
     function getValidationTypedHash(
         uint256 nonce,
+        uint256 deadline,
         Call[] calldata calls
     ) public view returns (bytes32) {
-        return _hashTypedDataV4(_getValidationHash(nonce, calls));
+        return _hashTypedDataV4(_getValidationHash(nonce, deadline, calls));
     }
 
     /**
@@ -134,11 +137,12 @@ abstract contract ValidationLogic is IValidation, WalletCoreBase {
      */
     function _validateCall(
         uint256 nonce,
+        uint256 deadline,
         Call[] calldata calls,
         address validator,
         bytes calldata validationData
     ) internal view {
-        bytes32 typedDataHash = getValidationTypedHash(nonce, calls);
+        bytes32 typedDataHash = getValidationTypedHash(nonce, deadline, calls);
         bool isValid = WalletCoreLib.validate(
             validator,
             typedDataHash,
@@ -156,6 +160,7 @@ abstract contract ValidationLogic is IValidation, WalletCoreBase {
      */
     function _getValidationHash(
         uint256 nonce,
+        uint256 deadline,
         Call[] calldata calls
     ) internal view returns (bytes32) {
         bytes32[] memory callHashes = new bytes32[](calls.length);
@@ -176,6 +181,7 @@ abstract contract ValidationLogic is IValidation, WalletCoreBase {
                     CALLS_TYPEHASH,
                     _walletImplementation(),
                     nonce,
+                    deadline,
                     keccak256(abi.encode(callHashes))
                 )
             );
