@@ -1,12 +1,18 @@
-name: Tests
+name: CI
  
 on:
   push:
     branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+ 
+env:
+  FOUNDRY_PROFILE: ci
  
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +24,17 @@ jobs:
         with:
           cache: true
  
+      - name: Check formatting
+        run: forge fmt --check
+ 
+      - name: Run linter
+        run: forge lint
+ 
       - name: Build
         run: forge build
  
       - name: Run tests
         run: forge test -vvv
+ 
+      - name: Check gas snapshots
+        run: forge snapshot --check
