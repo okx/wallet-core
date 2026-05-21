@@ -1,7 +1,0 @@
-{
-  "extends": "solhint:recommended",
-  "rules": {
-    "max-line-length": ["warn", 120],
-    "payable-fallback": "warn"
-  }
-}
